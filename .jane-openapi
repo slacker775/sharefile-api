@@ -1,0 +1,8 @@
+<?php
+
+return [
+  'openapi-file' => __DIR__ . '/openapi.yaml',
+  'namespace' => 'ShareFile\Api',
+  'directory' => __DIR__ . '/src/Api',
+  'client' => 'psr18',
+];

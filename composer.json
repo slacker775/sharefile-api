@@ -18,18 +18,23 @@
 		}
 	],
 	"require" : {
-		"php" : "^7.0",
-		"slacker775/oauth2-sharefile" : "^1.0",
-		"guzzlehttp/guzzle" : "^6.2",
-		"slacker775/oauth2-tokenstorage" : "^1.0"
+		"php": "^7.0",
+		"guzzlehttp/guzzle": "^6.2",
+		"jane-php/open-api-runtime": "^5.0",
+		"slacker775/oauth2-sharefile": "^1.0",
+		"slacker775/oauth2-tokenstorage": "^1.0"
 	},
 	"require-dev" : {
-		"larapack/dd" : "1.*",
-		"mikey179/vfsstream" : "^1.6",
-		"phpunit/phpunit" : "^6.4"
+		"jane-php/open-api": "^5.0",
+		"larapack/dd": "1.*",
+		"mikey179/vfsstream": "^1.6",
+		"phpunit/phpunit": "^6.4",
+		"symfony/http-client": "^5.0",
+		"zendframework/zend-diactoros": "^2.2"
 	},
 	"autoload" : {
 		"psr-4" : {
+			"ShareFile\\Api\\": "src/Api/",
 			"Kapersoft\\ShareFile\\" : "src/"
 		}
 	},

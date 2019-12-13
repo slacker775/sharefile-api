@@ -1,0 +1,223 @@
+openapi: 3.0.1
+info:
+  title: Allocations
+  description: Allocations divide the responsibility for an expense. Allocation entries
+    consist of a percentage of the original expense, and the configured custom fields.
+    Allocation entries are children of the expense entry. This API provides methods
+    to view all allocations for a user or report, or view an allocation by ID.
+  version: "3.0"
+servers:
+- url: https://account.sf-api.com/sf/v3
+security:
+- OAuth2: []
+tags:
+- name: Resources
+  description: ""
+paths:
+  /Items:
+    get:
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+  /Items({id}):
+    get:
+      parameters:
+        - name: id
+          in: path
+          description: ID of user to retrieve
+          required: true
+          schema:
+            type: string
+        - name: includeDeleted
+          in: query
+          schema:
+            type: boolean
+        - name: treeMode
+          in: query
+          schema:
+            type: string
+        - name: sourceId
+          in: query
+          schema:
+            type: string
+        - name: canCreateRootFolder
+          in: query
+          schema:
+            type: boolean      
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item' 
+  /Users:
+    get:
+      summary: Get Users
+      description: Gets all users
+      parameters:
+      - name: email
+        in: query
+        description: Email address of user to retrieve
+        schema:
+          type: string
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /Users({id}):
+    get:
+      summary: Get Users
+      description: Get by ID
+      parameters:
+      - name: id
+        in: path
+        description: ID of user to retrieve
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'    
+  /Zones:
+    get:
+      description: 'Retrieve the list of Zones accessible to the authenticated user'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+components:
+  schemas:
+    EmailAddress:
+      type: object
+      properties:
+        Email:
+          type: string
+        IsConfirmed:
+          type: boolean
+        IsPrimary:
+          type: boolean
+    Item:
+     type: object
+     properties:
+       Id:
+         type: string
+       Name:
+         type: string
+       FileName:
+         type: string
+    User:
+      type: object
+      properties:
+        Id:
+          type: string
+          description: 'The UUID of the user'
+        url:
+          type: string
+          description: 'The URL to request this user record'
+        Domain:
+          type: string
+          description: 'The domain segment for this user/account'
+        Username:
+          type: string
+          description: 'The users username'
+        FirstName:
+          type: string
+          description: 'The first name of the user'
+        LastName:
+          type: string
+          description: 'The last name of the user'
+        FullName:
+          type: string
+          description: 'The first and last name of the user'
+        FullNameShort:
+          type: string
+          description: 'The shortened full name of the user'
+        Company:
+          type: string
+          description: 'The company of the user'
+        Email:
+          type: string
+          description: 'The users primary email address'
+        Emails:
+          type: array
+          items:
+            type: string
+        EmailAddresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmailAddress'
+        CanCreateFolders:
+          type: boolean
+          description: 'This property is true if the user can create folders'
+        CanUseFileBox:
+          type: boolean
+          description: 'This property is true if the user can use the filebox'
+        CanManageUsers:
+          type: boolean
+          description: 'This property is true if the user can manage users'
+        IsAdministrator:
+          type: boolean
+          description: 'Whether or not this user is an administrator'
+        IsBillingContact:
+          type: boolean
+          description: 'Whether or not this user is the account''s billing contact'
+        IsConfirmed:
+          type: boolean
+          description: 'Whether or not this user has been confirmed'
+        IsDeleted:
+          type: boolean
+          description: 'Whether or not this user has been deleted'
+        IsVirtualClient:
+          type: boolean
+          description: 'Whether or not this user is a virtual client'
+        Roles:
+          type: array
+          items:
+            type: string
+        AffiliatedPartnerUserId:
+          type: string
+        ReferredBy:
+          type: string
+        DiskSpace:
+          type: int32
+        Bandwidth:
+          type: int32
+        TotalSharedFiles:
+          type: integer
+        Contacted:
+          type: integer
+#        DateCreated:
+#          type: string
+#          format: 'date-time'
+    Zone:
+      type: object
+      properties:
+        Id:
+          type: string
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      description: To use this API, you need to get OAuth client credentials (client
+        ID, secret, and geolocation) from SAP Concur, and be authorized to use the
+        relevant scope. Refer to the <a href="https://developer.concur.com/api-reference/authentication/getting-started.html">full
+        authentication information</a> for more information.
+      flows:
+        clientCredentials:
+          tokenUrl: https://us.api.concursolutions.com/oauth2/v0
+          scopes: {}
+
