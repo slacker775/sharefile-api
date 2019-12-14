@@ -1,20 +1,74 @@
 openapi: 3.0.1
 info:
-  title: Allocations
-  description: Allocations divide the responsibility for an expense. Allocation entries
-    consist of a percentage of the original expense, and the configured custom fields.
-    Allocation entries are children of the expense entry. This API provides methods
-    to view all allocations for a user or report, or view an allocation by ID.
-  version: "3.0"
+  title: ShareFile API
+  description: 'Citrix ShareFile API definition'
+  version: '3'
 servers:
-- url: https://account.sf-api.com/sf/v3
+  - url: https://{customerId}.sf-api.com/sf/v3
+    variables:
+      customerId:
+        default: account
+        description: Customer ID as defined in SF admin panel
 security:
-- OAuth2: []
-tags:
-- name: Resources
-  description: ""
+  - OAuth2: []
 paths:
-  /Items:
+  /Groups:
+    summary: 'Retrieves all Distribution Groups this user has permissions to View in this account '
+    parameters:
+      - name: $expand
+        description: 'The presence of the $expand system query option indicates that entities related to the entity, or collection of entities, identified by the resource path section of the URL MUST be represented inline.  The value of the $expand query option MUST be a comma separated list of navigation property paths.The service MUST include any actions or functions that are bound to the associated entities that are introduced via $expand, unless a $select System Query Option is also included in the request and that $select requests that the actions/functions be omitted.'
+        in: query
+        schema:
+          type: string
+    get:
+      responses:
+        200:
+          $ref: '#/components/responses/GroupFeedResponse'
+    post:
+      description: 'Creates a new group. The Post body must include the specification of the group.'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Group'
+      responses:
+        200:
+          $ref: '#/components/responses/GroupResponse'  
+  /Groups({id}):
+    parameters:
+      - name: id
+        in: path
+        description: ID of item to retrieve
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        200:
+          $ref: '#/components/responses/GroupResponse'
+    delete:
+      responses:
+        204:
+          description: Success
+        404:
+          $ref: '#/components/responses/ErrorResponse'
+    patch:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Group'    
+      responses:
+        200:
+          $ref: '#/components/responses/GroupResponse'
+  /Groups({id})/Contacts:
+    parameters:
+      - name: id
+        in: path
+        description: ID of item to retrieve
+        required: true
+        schema:
+          type: string
     get:
       responses:
         200:
@@ -22,13 +76,26 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Item'
+                $ref: '#/components/schemas/ContactFeed'
+    post:
+      responses:
+        200:
+          description: Success            
+    delete:
+      responses:
+        200:
+          description: Success            
+  /Items:
+    get:
+      responses:
+        200:
+          $ref: '#/components/responses/CommonItemResponse'
   /Items({id}):
     get:
       parameters:
         - name: id
           in: path
-          description: ID of user to retrieve
+          description: ID of item to retrieve
           required: true
           schema:
             type: string
@@ -54,7 +121,56 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Item' 
+                $ref: '#/components/schemas/File'
+#                  oneOf:
+#                    - $ref: '#/components/schemas/ShareFile.Api.Models.File'
+#                    - $ref: '#/components/schemas/ShareFile.Api.Models.Folder'
+#                    - $ref: '#/components/schemas/ShareFile.Api.Models.Item'
+#                  discriminator:
+#                    propertyName: odata.type
+#                    mapping:
+#                      ShareFile.Api.Models.File: '#/components/schemas/ShareFile.Api.Models.File'
+#                      ShareFile.Api.Models.Folder: '#/components/schemas/ShareFile.Api.Models.Folder'
+#                      ShareFile.Api.Models.Item: '#/components/schemas/ShareFile.Api.Models.Item'
+  /Items({id})/ByPath:
+    get:
+      description: 'Retrieves an item from its path, relative to the provided ID. The path is of format /foldername/foldername/filename This call may redirect the client to another API provider, if the path contains a symbolic link.'
+      parameters:
+        - name: id
+          in: path
+          description: ID of item to retrieve
+          required: true
+          schema:
+            type: string
+        - name: path
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          $ref: '#/components/responses/ErrorResponse'          
+        404:
+          $ref: '#/components/responses/ErrorResponse'
+  /Items({id})/Children:
+    get:
+      parameters:
+        - name: id
+          in: path
+          description: ID of item to retrieve
+          required: true
+          schema:
+            type: string
+        - name: includeDeleted
+          in: query
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feed'      
   /Users:
     get:
       summary: Get Users
@@ -89,7 +205,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'    
+                $ref: '#/components/schemas/User'
+  /Users({id})/Groups:
+    get:
+      summary: Get groups for specified user
+      description: Get by user ID
+      parameters:
+      - name: id
+        in: path
+        description: ID of user to retrieve
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feed'                
   /Zones:
     get:
       description: 'Retrieve the list of Zones accessible to the authenticated user'
@@ -99,9 +233,40 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Zone'
+                $ref: '#/components/schemas/Feed'
 components:
   schemas:
+    BaseOdataModel:
+      type: object
+      required:
+        - odata.type
+      properties:
+        Id:
+          type: string
+          readOnly: true
+        url:
+          type: string
+          readOnly: true
+        odata.type:
+          type: string
+          readOnly: true
+        odata.metadata:
+          type: string
+          readOnly: true
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        reason:
+          type: string
+        message:
+          type: object
+          properties:
+            lang:
+              type: string
+            value:
+              type: string
     EmailAddress:
       type: object
       properties:
@@ -111,15 +276,224 @@ components:
           type: boolean
         IsPrimary:
           type: boolean
+    Contact:
+      allOf:
+        - $ref: '#/components/schemas/BaseOdataModel'
+        - type: object
+          properties:
+            Name:
+              type: string
+            FirstName:
+              type: string
+            LastName:
+              type: string
+            Company:
+              type: string
+            Email:
+              type: string
+            IsConfirmed:
+              type: boolean
+            IsDisabled:
+              type: boolean
+            LastAnyLogin:
+              type: string
+              readOnly: true
+            CreatedDate:
+              type: string
+              readOnly: true
+    ContactFeed:
+      allOf:
+        - $ref: '#/components/schemas/Feed'
+        - type: object
+          properties:
+            value:
+              type: array
+              items:
+                $ref: '#/components/schemas/Contact'
+    Feed:
+      type: object
+      properties:
+        odata.metadata:
+          type: string
+        odata.count:
+          type: integer
+        value:
+          type: array
+          items:
+            anyOf:
+              - $ref: '#/components/schemas/Group'
+              - $ref: '#/components/schemas/Item'
+              - $ref: '#/components/schemas/Zones'
+            discriminator:
+              propertyName: 'odata.type'
+              mapping:
+                 ShareFile.Api.Models.Group: '#/components/schemas/Group'
+        url:
+          type:
+            string
+    File:
+      allOf:
+        - $ref: '#/components/schemas/Item'
+        - type: object
+          properties:
+            FilePath:
+              type: string
+            Hash:
+              type: string
+            HasPreview:
+              type: boolean
+            Info:
+              $ref: '#/components/schemas/ItemInfo'
+            VirusStatus:
+              type: string
+            DlpInfo:
+              type: string
+            LockedBy:
+              type: string
+            FileLockInfo:
+              type: string
+            Version:
+              type: string
+            ESignatureDocument:
+              type: string
+    Folder:
+      allOf:
+        - $ref: '#/components/schemas/Item'
+        - type: object
+          properties:
+            FileCount:
+              type: integer
+            Children:
+              type: string
+            HasRemoteChildren:
+              type: boolean
+            Info:
+              $ref: '#/components/schemas/ItemInfo'
+            Redirection:
+              type: string
+            FavoriteFolder:
+              type: string
+    Group:
+      allOf:
+        - $ref: '#/components/schemas/BaseOdataModel'
+        - type: object
+          properties:
+            Name:
+              type: string
+            IsShared:
+              type: boolean
+              description: 'Whether this group is public'
+              default: true
+    GroupFeed:
+      allOf:
+        - $ref: '#/components/schemas/Feed'
+        - type: object
+          properties:
+            value:
+              type: array
+              items:
+                $ref: '#/components/schemas/Group'
+    ItemInfo:
+      allOf:
+        - $ref: '#/components/schemas/BaseOdataModel'
+        - type: object
+          properties:
+            HasVroot:
+              type: boolean
+            IsSystemRoot:
+              type: boolean
+            IsAccountRoot:
+              type: boolean
+            IsVRoot:
+              type: boolean
+            IsMyFolders:
+              type: boolean
+            IsAHomeFolder:
+              type: boolean
+            IsAStartFolder:
+              type: boolean
+            IsSharedFolder:
+              type: boolean
+            IsPassthrough:
+              type: boolean
+            CanAddFolder:
+              type: boolean
+            CanAddNode:
+              type: boolean
+            CanView:
+              type: boolean
+            CanDownload:
+              type: boolean
+            CanUpload:
+              type: boolean
+            CanSend:
+              type: boolean
+            CanDeleteCurrentItem:
+              type: boolean
+            CanDeleteChildItems:
+              type: boolean
+            CanManagePermissions:
+              type: boolean
+            CanCreateOfficeDocuments:
+              type: boolean
+            ShowFolderPayBuyButton:
+              type: boolean
+            CanCreateRequestList:
+              type: boolean
+            FolderPayID:
+              type: string
     Item:
-     type: object
-     properties:
-       Id:
-         type: string
-       Name:
-         type: string
-       FileName:
-         type: string
+      allOf:
+        - $ref: '#/components/schemas/BaseOdataModel'
+        - type: object
+          properties:
+            Name:
+              type: string
+            FileName:
+              type: string
+            Path:
+              type: string
+            FileSizeInKB:
+              type: integer
+            FileSizeBytes:
+              type: integer
+            Description:
+              type: string
+            Parent:
+              $ref: '#/components/schemas/Item'
+            Zone:
+              $ref: '#/components/schemas/Zones'
+            HasPendingDeletion:
+              type: boolean
+            StreamID:
+              type: string
+            HasMultipleVersions:
+              type: boolean
+            CreationDate:
+              type: string
+              format: date-time
+            ProgenyEditDate:
+              type: string
+            ExpirationDate:
+              type: string
+            ExpirationDays:
+              type: integer              
+            CreatorFirstName:
+              type: string
+            CreatorLastName:
+              type: string
+            CreatorNameShort:
+              type: string
+            SemanticPath:
+              type: string
+            BandwidthLimitInMB:                     
+              type: integer
+            IsHidden:
+              type: boolean
+            DiskSpaceLimit:
+              type: integer
+            PreviewStatus:
+              type: string
     User:
       type: object
       properties:
@@ -194,9 +568,9 @@ components:
         ReferredBy:
           type: string
         DiskSpace:
-          type: int32
+          type: integer
         Bandwidth:
-          type: int32
+          type: integer
         TotalSharedFiles:
           type: integer
         Contacted:
@@ -204,11 +578,67 @@ components:
 #        DateCreated:
 #          type: string
 #          format: 'date-time'
-    Zone:
+    Zones:
       type: object
       properties:
         Id:
           type: string
+        url:
+          type: string
+        Name:
+          type: string
+        ZoneType:
+          type: string
+        HeartBeatTolerance:
+          type: integer
+        Version:
+          type: string
+        ZoneServices:
+          type: string
+        IsHIPAAZone:
+          type: boolean
+        IsMultiTenant:
+          type: boolean      
+  responses:
+    CommonItemResponse:
+      description: 'Common File or Folder Item response'
+      content:
+        application/json:
+          schema:
+             oneOf:
+               - $ref: '#/components/schemas/File' 
+               - $ref: '#/components/schemas/Folder'
+               - $ref: '#/components/schemas/Item'
+             discriminator:
+               propertyName: odata.type
+               mapping:
+                 ShareFile.Api.Models.File: '#/components/schemas/File'
+                 ShareFile.Api.Models.Folder: '#/components/schemas/Folder'
+                 ShareFile.Api.Models.Item: '#/components/schemas/Item'
+    ErrorResponse:
+      description: 'Error'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ContactFeedResponse:
+      description: 'Success'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ContactFeed'
+    GroupFeedResponse:
+      description: 'Success'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GroupFeed'
+    GroupResponse:
+      description: 'Success'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Group'      
   securitySchemes:
     OAuth2:
       type: oauth2
@@ -218,6 +648,5 @@ components:
         authentication information</a> for more information.
       flows:
         clientCredentials:
-          tokenUrl: https://us.api.concursolutions.com/oauth2/v0
+          tokenUrl: https://{companyId}.sharefile.com/oauth/token 
           scopes: {}
-
