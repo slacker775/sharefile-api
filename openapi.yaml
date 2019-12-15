@@ -12,6 +12,65 @@ servers:
 security:
   - OAuth2: []
 paths:
+  /Accounts:
+    get:
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+  /Accounts({id}):
+    parameters:
+      - name: id
+        in: path
+        description: ID of item to retrieve
+        required: true
+        schema:
+          type: string  
+    get:
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+  /Accounts/Employees:
+    get:
+      description: 'Returns a feed containing all Employee Contacts in the account.'
+      parameters:
+        - name: withRightSignature
+          in: query
+          description: ''
+          schema:
+            type: boolean
+      responses:
+        200:
+          $ref: '#/components/responses/ContactFeedResponse'
+  /Accounts/Clients:
+    get:
+      description: 'Retrieves the list of Clients in the Account. Clients are restricted users of an Account, that can receive and send files to Employees, but have no other permissions besides basic sharing with Employees.'
+      responses:
+        200:
+          $ref: '#/components/responses/ContactFeedResponse'
+  /Contacts({id}):
+    parameters:
+      - name: id
+        in: path
+        description: ID of item to retrieve
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /Groups:
     summary: 'Retrieves all Distribution Groups this user has permissions to View in this account '
     parameters:
@@ -176,11 +235,25 @@ paths:
       summary: Get Users
       description: Gets all users
       parameters:
-      - name: email
-        in: query
-        description: Email address of user to retrieve
-        schema:
-          type: string
+        - name: email
+          in: query
+          description: Email address of user to retrieve
+          schema:
+            type: string
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    post:
+      description: 'Creates a new Client User and associates it to an Account '
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
       responses:
         200:
           description: Success
@@ -189,16 +262,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
   /Users({id}):
-    get:
-      summary: Get Users
-      description: Get by ID
-      parameters:
+    parameters:
       - name: id
         in: path
         description: ID of user to retrieve
         required: true
         schema:
           type: string
+    get:
+      summary: 'Get a user by ID'
+      description: 'Retrieve a single user by ID'
       responses:
         200:
           description: Success
@@ -206,24 +279,145 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-  /Users({id})/Groups:
-    get:
-      summary: Get groups for specified user
-      description: Get by user ID
-      parameters:
-      - name: id
-        in: path
-        description: ID of user to retrieve
-        required: true
-        schema:
-          type: string
+    patch:
+      summary: 'Update a single user'
+      description: 'Modifies an existing user object'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
       responses:
         200:
           description: Success
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Feed'                
+                $ref: '#/components/schemas/User'      
+  /Users({id})/Groups:
+    get:
+      summary: Get groups for specified user
+      description: Get by user ID
+      parameters:
+        - name: id
+          in: path
+          description: ID of user to retrieve
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feed'
+  /Users({id})/Roles:
+    parameters:
+      - name: id
+        in: path
+        description: ID of user to retrieve
+        required: true
+        schema:
+          type: string
+    patch:
+      summary: 'Add roles to user'
+      description: 'Modifies an existing user object to ADD a new role.  The following roles can be added to the user through this call (depending on User type): CanCreateFolders, CanSelectFolderZone, CanUseFileBox, CanManageUsers, AdminSharedAddressBook, CanChangePassword, CanManageMySettings, AdminManageDropBox'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: 'Set roles for a user'
+      description: 'Sets the roles for a user (roles not provided will be disabled.).  The following roles can be set to the user through this call (depending on User type): CanCreateFolders, CanSelectFolderZone, CanUseFileBox, CanManageUsers, AdminSharedAddressBook, CanChangePassword, CanManageMySettings, AdminManageDropBox '
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /Users({id})/RemoveRoles:
+    parameters:
+      - name: id
+        in: path
+        description: ID of user to retrieve
+        required: true
+        schema:
+          type: string
+    post:
+      summary: 'Removes the roles for user'
+      description: 'The following roles can be removed from user through this call (depending on User type): CanCreateFolders, CanSelectFolderZone, CanUseFileBox, CanManageUsers, AdminSharedAddressBook, CanChangePassword, CanManageMySettings'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'          
+  /Users/AccountUser:
+    post:
+      description: 'Creates a new Account User and associates it to an Account '
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /Users/AccountUser({id}):
+    parameters:
+      - name: id
+        in: path
+        description: ID of user to retrieve
+        required: true
+        schema:
+          type: string
+    patch:
+      summary: 'Update Employee or Promote Customer'
+      description: 'The following parameters can be modified through this call: FirstName, LastName, Company, Email, IsEmployee, IsDisabled, DefaultZone Id, StorageQuotaLimitGB, Bandwidth.  During a promotion (the user id points to Customer), the following parameters can be modified: CanCreateFolders, CanUseFileBox, CanManageUsers.  StorageQuotaLimitGB equal to -1 sets the user quota to the account default storage quota value.  Bandwidth equal to -1 sets the user bandwidth to unlimited. '
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /Users({id})/HomeFolder:
+    parameters:
+      - name: id
+        in: path
+        description: ID of user to retrieve
+        required: true
+        schema:
+          type: string
+    get:
+      description: 'Returns a user''s home folder'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Folder'
   /Zones:
     get:
       description: 'Retrieve the list of Zones accessible to the authenticated user'
@@ -276,6 +470,37 @@ components:
           type: boolean
         IsPrimary:
           type: boolean
+    Account:
+      allOf:
+        - $ref: '#/components/schemas/BaseOdataModel'
+        - type: object
+          properties:
+            CompanyName:
+              type: string
+            PlanName:
+              type: string
+            PlanTrack:
+              type: string
+            PlanTrackEnum:
+              type: string
+            Subdomains:
+              type: array
+              items:
+                type: string
+            Subdomain:
+              description: 'Default subdomain'
+              type: string
+            BillingType:
+              type: string
+            BillingCycle:
+              type: string
+            BillingRate:
+              type: number
+            BaseBillingRate:
+              type: number
+            BaseBandwidth:
+              type: integer
+            
     Contact:
       allOf:
         - $ref: '#/components/schemas/BaseOdataModel'
@@ -495,110 +720,133 @@ components:
             PreviewStatus:
               type: string
     User:
-      type: object
-      properties:
-        Id:
-          type: string
-          description: 'The UUID of the user'
-        url:
-          type: string
-          description: 'The URL to request this user record'
-        Domain:
-          type: string
-          description: 'The domain segment for this user/account'
-        Username:
-          type: string
-          description: 'The users username'
-        FirstName:
-          type: string
-          description: 'The first name of the user'
-        LastName:
-          type: string
-          description: 'The last name of the user'
-        FullName:
-          type: string
-          description: 'The first and last name of the user'
-        FullNameShort:
-          type: string
-          description: 'The shortened full name of the user'
-        Company:
-          type: string
-          description: 'The company of the user'
-        Email:
-          type: string
-          description: 'The users primary email address'
-        Emails:
-          type: array
-          items:
-            type: string
-        EmailAddresses:
-          type: array
-          items:
-            $ref: '#/components/schemas/EmailAddress'
-        CanCreateFolders:
-          type: boolean
-          description: 'This property is true if the user can create folders'
-        CanUseFileBox:
-          type: boolean
-          description: 'This property is true if the user can use the filebox'
-        CanManageUsers:
-          type: boolean
-          description: 'This property is true if the user can manage users'
-        IsAdministrator:
-          type: boolean
-          description: 'Whether or not this user is an administrator'
-        IsBillingContact:
-          type: boolean
-          description: 'Whether or not this user is the account''s billing contact'
-        IsConfirmed:
-          type: boolean
-          description: 'Whether or not this user has been confirmed'
-        IsDeleted:
-          type: boolean
-          description: 'Whether or not this user has been deleted'
-        IsVirtualClient:
-          type: boolean
-          description: 'Whether or not this user is a virtual client'
-        Roles:
-          type: array
-          items:
-            type: string
-        AffiliatedPartnerUserId:
-          type: string
-        ReferredBy:
-          type: string
-        DiskSpace:
-          type: integer
-        Bandwidth:
-          type: integer
-        TotalSharedFiles:
-          type: integer
-        Contacted:
-          type: integer
-#        DateCreated:
-#          type: string
-#          format: 'date-time'
+      allOf:
+        - $ref: '#/components/schemas/BaseOdataModel'
+        - type: object
+          properties:
+            Domain:
+              type: string
+              nullable: true
+              description: 'The domain segment for this user/account'
+            Username:
+              type: string
+              nullable: true
+              description: 'The users username'
+            FirstName:
+              type: string
+              nullable: true
+              description: 'The first name of the user'
+            LastName:
+              type: string
+              nullable: true
+              description: 'The last name of the user'
+            FullName:
+              type: string
+              nullable: true
+              description: 'The first and last name of the user'
+            FullNameShort:
+              type: string
+              nullable: true
+              description: 'The shortened full name of the user'
+            Company:
+              type: string
+              nullable: true
+              description: 'The company of the user'
+            Email:
+              type: string
+              nullable: true
+              description: 'The users primary email address'
+            Emails:
+              type: array
+              nullable: true
+              items:
+                type: string
+            EmailAddresses:
+              type: array
+              nullable: true
+              items:
+                $ref: '#/components/schemas/EmailAddress'
+            CanCreateFolders:
+              type: boolean
+              readOnly: true
+              description: 'This property is true if the user can create folders'
+            CanUseFileBox:
+              type: boolean
+              readOnly: true
+              description: 'This property is true if the user can use the filebox'
+            CanManageUsers:
+              type: boolean
+              readOnly: true
+              description: 'This property is true if the user can manage users'
+            IsAdministrator:
+              type: boolean
+              readOnly: true
+              description: 'Whether or not this user is an administrator'
+            IsBillingContact:
+              type: boolean
+              readOnly: true
+              description: 'Whether or not this user is the account''s billing contact'
+            IsConfirmed:
+              type: boolean
+              readOnly: true
+              description: 'Whether or not this user has been confirmed'
+            IsDeleted:
+              type: boolean
+              readOnly: true
+              description: 'Whether or not this user has been deleted'
+            IsVirtualClient:
+              type: boolean
+              readOnly: true
+              description: 'Whether or not this user is a virtual client'
+            Roles:
+              type: array
+              nullable: true
+              items:
+                type: string
+            AffiliatedPartnerUserId:
+              type: string
+              readOnly: true
+            ReferredBy:
+              type: string
+              readOnly: true
+            DiskSpace:
+              type: integer
+              nullable: true
+            Bandwidth:
+              type: integer
+              nullable: true
+            TotalSharedFiles:
+              type: integer
+              nullable: true
+            Contacted:
+              type: integer
+              nullable: true
+            DateCreated:
+              type: string
+              nullable: true
     Zones:
-      type: object
-      properties:
-        Id:
-          type: string
-        url:
-          type: string
-        Name:
-          type: string
-        ZoneType:
-          type: string
-        HeartBeatTolerance:
-          type: integer
-        Version:
-          type: string
-        ZoneServices:
-          type: string
-        IsHIPAAZone:
-          type: boolean
-        IsMultiTenant:
-          type: boolean      
+      allOf:
+        - $ref: '#/components/schemas/BaseOdataModel'
+        - type: object
+          properties:
+            Id:
+              type: string
+            url:
+              type: string
+            Name:
+              type: string
+            ZoneType:
+              type: string
+            HeartBeatTolerance:
+              type: integer
+            Version:
+              type: string
+            ZoneServices:
+              type: string
+            IsHIPAAZone:
+              type: boolean
+            IsMultiTenant:
+              type: boolean      
   responses:
     CommonItemResponse:
       description: 'Common File or Folder Item response'
