@@ -40,6 +40,7 @@ paths:
   /Accounts/Employees:
     get:
       description: 'Returns a feed containing all Employee Contacts in the account.'
+      operationId: getAccountEmployees
       parameters:
         - name: withRightSignature
           in: query
@@ -52,6 +53,7 @@ paths:
   /Accounts/Clients:
     get:
       description: 'Retrieves the list of Clients in the Account. Clients are restricted users of an Account, that can receive and send files to Employees, but have no other permissions besides basic sharing with Employees.'
+      operationId: getAccountClients
       responses:
         200:
           $ref: '#/components/responses/ContactFeedResponse'
@@ -64,6 +66,7 @@ paths:
         schema:
           type: string
     get:
+      operationId: getContactById
       responses:
         200:
           description: Success
@@ -72,19 +75,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
   /Groups:
-    summary: 'Retrieves all Distribution Groups this user has permissions to View in this account '
+    summary: 'Retrieves all Distribution Groups this user has permissions to View in this account'
     parameters:
-      - name: $expand
-        description: 'The presence of the $expand system query option indicates that entities related to the entity, or collection of entities, identified by the resource path section of the URL MUST be represented inline.  The value of the $expand query option MUST be a comma separated list of navigation property paths.The service MUST include any actions or functions that are bound to the associated entities that are introduced via $expand, unless a $select System Query Option is also included in the request and that $select requests that the actions/functions be omitted.'
-        in: query
-        schema:
-          type: string
+      - $ref: '#/components/parameters/expandParam'
+      - $ref: '#/components/parameters/filterParam'
+      - $ref: '#/components/parameters/orderbyParam'
+      - $ref: '#/components/parameters/selectParam'
+      - $ref: '#/components/parameters/skipParam'
+      - $ref: '#/components/parameters/topParam'
     get:
+      operationId: getGroups
       responses:
         200:
           $ref: '#/components/responses/GroupFeedResponse'
     post:
       description: 'Creates a new group. The Post body must include the specification of the group.'
+      operationId: createGroup
       requestBody:
         content:
           application/json:
@@ -102,16 +108,19 @@ paths:
         schema:
           type: string
     get:
+      operationId: getGroup
       responses:
         200:
           $ref: '#/components/responses/GroupResponse'
     delete:
+      operationId: deleteGroup
       responses:
         204:
           description: Success
         404:
           $ref: '#/components/responses/ErrorResponse'
     patch:
+      operationId: updateGroup
       requestBody:
         content:
           application/json:
@@ -129,6 +138,7 @@ paths:
         schema:
           type: string
     get:
+      operationId: getGroupContacts
       responses:
         200:
           description: Success
@@ -146,18 +156,46 @@ paths:
           description: Success            
   /Items:
     get:
+      operationId: getItems
       responses:
         200:
           $ref: '#/components/responses/CommonItemResponse'
-  /Items({id}):
+  /Items/ByPath:
+    parameters:
+      - $ref: '#/components/parameters/expandParam'
+      - $ref: '#/components/parameters/filterParam'
+      - $ref: '#/components/parameters/orderbyParam'
+      - $ref: '#/components/parameters/selectParam'
+      - $ref: '#/components/parameters/skipParam'
+      - $ref: '#/components/parameters/topParam'
     get:
+      operationId: getItemsByPath
       parameters:
-        - name: id
-          in: path
-          description: ID of item to retrieve
+        - name: path
+          in: query
           required: true
           schema:
             type: string
+      responses:
+        200:
+          $ref: '#/components/responses/ErrorResponse'
+  /Items({id}):
+    parameters:
+      - $ref: '#/components/parameters/expandParam'
+      - $ref: '#/components/parameters/filterParam'
+      - $ref: '#/components/parameters/orderbyParam'
+      - $ref: '#/components/parameters/selectParam'
+      - $ref: '#/components/parameters/skipParam'
+      - $ref: '#/components/parameters/topParam'
+      - name: id
+        in: path
+        description: ID of item to retrieve
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getItem
+      parameters:
         - name: includeDeleted
           in: query
           schema:
@@ -180,27 +218,68 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/File'
-#                  oneOf:
-#                    - $ref: '#/components/schemas/ShareFile.Api.Models.File'
-#                    - $ref: '#/components/schemas/ShareFile.Api.Models.Folder'
-#                    - $ref: '#/components/schemas/ShareFile.Api.Models.Item'
-#                  discriminator:
-#                    propertyName: odata.type
-#                    mapping:
-#                      ShareFile.Api.Models.File: '#/components/schemas/ShareFile.Api.Models.File'
-#                      ShareFile.Api.Models.Folder: '#/components/schemas/ShareFile.Api.Models.Folder'
-#                      ShareFile.Api.Models.Item: '#/components/schemas/ShareFile.Api.Models.Item'
+                  oneOf:
+                    - $ref: '#/components/schemas/File'
+                    - $ref: '#/components/schemas/Folder'
+                  discriminator:
+                    propertyName: odata.type
+                    mapping:
+                      ShareFile.Api.Models.File: '#/components/schemas/ShareFile.Api.Models.File'
+                      ShareFile.Api.Models.Folder: '#/components/schemas/ShareFile.Api.Models.Folder'
+    patch:
+      summary: 'Update file or folder'
+      operationId: updateItem
+      parameters:
+        - name: overwrite
+          in: query
+          schema:
+            type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/File'
+                - $ref: '#/components/schemas/Folder'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+    delete:
+      summary: 'Delete file or folder'
+      parameters:
+        - name: singleversion
+          in: query
+          schema:
+            type: boolean
+        - name: forceSync
+          in: query
+          schema:
+            type: boolean
+      responses:
+        204:
+          description: Success
   /Items({id})/ByPath:
+    parameters:
+      - $ref: '#/components/parameters/expandParam'
+      - $ref: '#/components/parameters/filterParam'
+      - $ref: '#/components/parameters/orderbyParam'
+      - $ref: '#/components/parameters/selectParam'
+      - $ref: '#/components/parameters/skipParam'
+      - $ref: '#/components/parameters/topParam'
+      - name: id
+        in: path
+        description: ID of item to retrieve
+        required: true
+        schema:
+          type: string
     get:
       description: 'Retrieves an item from its path, relative to the provided ID. The path is of format /foldername/foldername/filename This call may redirect the client to another API provider, if the path contains a symbolic link.'
+      operationId: getItemByRelativePath
       parameters:
-        - name: id
-          in: path
-          description: ID of item to retrieve
-          required: true
-          schema:
-            type: string
         - name: path
           in: query
           schema:
@@ -211,7 +290,16 @@ paths:
         404:
           $ref: '#/components/responses/ErrorResponse'
   /Items({id})/Children:
+    parameters:
+      - $ref: '#/components/parameters/expandParam'
+      - $ref: '#/components/parameters/filterParam'
+      - $ref: '#/components/parameters/orderbyParam'
+      - $ref: '#/components/parameters/selectParam'
+      - $ref: '#/components/parameters/skipParam'
+      - $ref: '#/components/parameters/topParam'
     get:
+      description: 'Returns: the list of children under the given object ID'
+      operationId: getItemChildren
       parameters:
         - name: id
           in: path
@@ -225,15 +313,145 @@ paths:
             type: boolean
       responses:
         200:
+          $ref: '#/components/responses/FeedResponse'
+  /Items({id})/Download:
+    parameters:
+      - name: id
+        in: path
+        description: ID of item to retrieve
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getItemContents
+      parameters:
+        - name: includeDeleted
+          description: 'For FINRA or other archive enabled account only, Super User can set includeDelete=true to download archived item. The default value of includeDeleted is false'
+          in: query
+          schema:
+            type: boolean
+        - name: includeAllVersions
+          description: 'For folder downloads only, includes old versions of files in the folder in the zip when true, current versions only when false (default)'
+          in: query
+          schema:
+            type: boolean
+        - name: redirect
+          description: 'Redirect to download link if set to true (default), or return a DownloadSpecification object if set to false'
+          in: query
+          schema:
+            type: boolean
+      responses:
+        200:
+          $ref: '#/components/responses/ErrorResponse'
+  /Items({id})/BulkDownload:
+    parameters:
+      - name: id
+        in: path
+        description: ID of item to retrieve
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: downloadItemsBulk
+      responses:
+        200:
+          $ref: '#/components/responses/ErrorResponse'
+  /Items({parentid})/Folder:
+    parameters:
+      - name: parentid
+        in: path
+        description: ID of parent folder to hold this new folder
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: createFolder
+      parameters:
+        - name: overwrite
+          in: query
+          schema:
+            type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Folder'
+      responses:
+        200:
           description: Success
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Feed'      
+                $ref: '#/components/schemas/Folder'
+  /Items({id})/Upload:
+    parameters:
+      - name: id
+        in: path
+        description: ID of parent folder to hold this new file
+        required: true
+        schema:
+          type: string
+    post:
+      summary: 'Upload a file'
+      operationId: uploadFile
+      parameters:
+        - name: method
+          in: query
+          schema:
+            type: string
+            enum: [standard, streamed, threaded]
+        - name: raw
+          in: query
+          schema:
+            type: boolean
+        - name: fileName
+          in: query
+          schema:
+            type: string
+        - name: fileSize
+          in: query
+          schema:
+            type: integer
+        - name: title
+          in: query
+          schema:
+            type: string
+        - name: details
+          in: query
+          schema:
+            type: string
+        - name: batchId
+          in: query
+          schema:
+            type: string
+        - name: batchLast
+          in: query
+          schema:
+            type: boolean          
+        - name: canResume
+          in: query
+          schema:
+            type: boolean   
+        - name: startOver
+          in: query
+          schema:
+            type: boolean   
+        - name: overwrite
+          in: query
+          schema:
+            type: boolean   
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadSpecification'
   /Users:
     get:
       summary: Get Users
       description: Gets all users
+      operationId: getUsers
       parameters:
         - name: email
           in: query
@@ -248,7 +466,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
     post:
-      description: 'Creates a new Client User and associates it to an Account '
+      description: 'Creates a new Client User and associates it to an Account'
+      operationId: createClientUser
       requestBody:
         content:
           application/json:
@@ -263,6 +482,12 @@ paths:
                 $ref: '#/components/schemas/User'
   /Users({id}):
     parameters:
+      - $ref: '#/components/parameters/expandParam'
+      - $ref: '#/components/parameters/filterParam'
+      - $ref: '#/components/parameters/orderbyParam'
+      - $ref: '#/components/parameters/selectParam'
+      - $ref: '#/components/parameters/skipParam'
+      - $ref: '#/components/parameters/topParam'
       - name: id
         in: path
         description: ID of user to retrieve
@@ -272,6 +497,7 @@ paths:
     get:
       summary: 'Get a user by ID'
       description: 'Retrieve a single user by ID'
+      operationId: getUserById
       responses:
         200:
           description: Success
@@ -282,6 +508,7 @@ paths:
     patch:
       summary: 'Update a single user'
       description: 'Modifies an existing user object'
+      operationId: updateUser
       requestBody:
         content:
           application/json:
@@ -298,6 +525,7 @@ paths:
     get:
       summary: Get groups for specified user
       description: Get by user ID
+      operationId: getUserGroups
       parameters:
         - name: id
           in: path
@@ -323,6 +551,7 @@ paths:
     patch:
       summary: 'Add roles to user'
       description: 'Modifies an existing user object to ADD a new role.  The following roles can be added to the user through this call (depending on User type): CanCreateFolders, CanSelectFolderZone, CanUseFileBox, CanManageUsers, AdminSharedAddressBook, CanChangePassword, CanManageMySettings, AdminManageDropBox'
+      operationId: updateUserRoles
       responses:
         200:
           description: Success
@@ -333,6 +562,7 @@ paths:
     put:
       summary: 'Set roles for a user'
       description: 'Sets the roles for a user (roles not provided will be disabled.).  The following roles can be set to the user through this call (depending on User type): CanCreateFolders, CanSelectFolderZone, CanUseFileBox, CanManageUsers, AdminSharedAddressBook, CanChangePassword, CanManageMySettings, AdminManageDropBox '
+      operationId: setUserRoles
       responses:
         200:
           description: Success
@@ -351,6 +581,7 @@ paths:
     post:
       summary: 'Removes the roles for user'
       description: 'The following roles can be removed from user through this call (depending on User type): CanCreateFolders, CanSelectFolderZone, CanUseFileBox, CanManageUsers, AdminSharedAddressBook, CanChangePassword, CanManageMySettings'
+      operationId: removeUserRoles
       requestBody:
         content:
           application/json:
@@ -365,7 +596,8 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'          
   /Users/AccountUser:
     post:
-      description: 'Creates a new Account User and associates it to an Account '
+      description: 'Creates a new Account User and associates it to an Account'
+      operationId: createAccountUser
       requestBody:
         content:
           application/json:
@@ -388,7 +620,8 @@ paths:
           type: string
     patch:
       summary: 'Update Employee or Promote Customer'
-      description: 'The following parameters can be modified through this call: FirstName, LastName, Company, Email, IsEmployee, IsDisabled, DefaultZone Id, StorageQuotaLimitGB, Bandwidth.  During a promotion (the user id points to Customer), the following parameters can be modified: CanCreateFolders, CanUseFileBox, CanManageUsers.  StorageQuotaLimitGB equal to -1 sets the user quota to the account default storage quota value.  Bandwidth equal to -1 sets the user bandwidth to unlimited. '
+      description: 'The following parameters can be modified through this call: FirstName, LastName, Company, Email, IsEmployee, IsDisabled, DefaultZone Id, StorageQuotaLimitGB, Bandwidth.  During a promotion (the user id points to Customer), the following parameters can be modified: CanCreateFolders, CanUseFileBox, CanManageUsers.  StorageQuotaLimitGB equal to -1 sets the user quota to the account default storage quota value.  Bandwidth equal to -1 sets the user bandwidth to unlimited.'
+      operationId: updateAccountUser
       requestBody:
         content:
           application/json:
@@ -421,6 +654,7 @@ paths:
   /Zones:
     get:
       description: 'Retrieve the list of Zones accessible to the authenticated user'
+      operationId: getZones
       responses:
         200:
           description: Success
@@ -540,22 +774,34 @@ components:
       properties:
         odata.metadata:
           type: string
+          readOnly: true
         odata.count:
           type: integer
+          readOnly: true
         value:
           type: array
           items:
-            anyOf:
+            oneOf:
+              - $ref: '#/components/schemas/Contact'
               - $ref: '#/components/schemas/Group'
+              - $ref: '#/components/schemas/File'
+              - $ref: '#/components/schemas/Folder'
               - $ref: '#/components/schemas/Item'
-              - $ref: '#/components/schemas/Zones'
+              - $ref: '#/components/schemas/User'
+              - $ref: '#/components/schemas/Zone'
             discriminator:
-              propertyName: 'odata.type'
+              propertyName: odata.type
               mapping:
+                 ShareFile.Api.Models.Contact: '#/components/schemas/Contact'
                  ShareFile.Api.Models.Group: '#/components/schemas/Group'
+                 ShareFile.Api.Models.File: '#/components/schemas/File'
+                 ShareFile.Api.Models.Folder: '#/components/schemas/Folder'
+                 ShareFile.Api.Models.Item: '#/components/schemas/Item'
+                 ShareFile.Api.Models.User: '#/components/schemas/User'
+                 ShareFile.Api.Models.Zone: '#/components/schemas/Zone'
         url:
-          type:
-            string
+          type: string
+          readOnly: true
     File:
       allOf:
         - $ref: '#/components/schemas/Item'
@@ -687,7 +933,7 @@ components:
             Parent:
               $ref: '#/components/schemas/Item'
             Zone:
-              $ref: '#/components/schemas/Zones'
+              $ref: '#/components/schemas/Zone'
             HasPendingDeletion:
               type: boolean
             StreamID:
@@ -824,15 +1070,32 @@ components:
             DateCreated:
               type: string
               nullable: true
-    Zones:
+    UploadSpecification:
       allOf:
         - $ref: '#/components/schemas/BaseOdataModel'
         - type: object
           properties:
-            Id:
+            Method:
               type: string
-            url:
+            ChunkUri:
               type: string
+            ProgressData:
+              type: string
+            IsResume:
+              type: boolean
+            ResumeIndex:
+              type: integer
+            ResumeOffset:
+              type: integer
+            ResumeFileHash:
+              type: string
+            MaxNumberOfThreads:
+              type: integer
+    Zone:
+      allOf:
+        - $ref: '#/components/schemas/BaseOdataModel'
+        - type: object
+          properties:
             Name:
               type: string
             ZoneType:
@@ -875,6 +1138,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ContactFeed'
+    FeedResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Feed'
     GroupFeedResponse:
       description: 'Success'
       content:
@@ -887,14 +1156,51 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Group'      
+  parameters:
+    expandParam:
+      name: $expand
+      description: 'The presence of the $expand system query option indicates that entities related to the entity, or collection of entities, identified by the resource path section of the URL MUST be represented inline.  The value of the $expand query option MUST be a comma separated list of navigation property paths.The service MUST include any actions or functions that are bound to the associated entities that are introduced via $expand, unless a $select System Query Option is also included in the request and that $select requests that the actions/functions be omitted.'
+      in: query
+      schema:
+        type: string
+    filterParam:
+      name: $filter
+      description: 'The set of entities returned MAY be restricted through the use of the $filter System Query Option.'
+      in: query
+      schema:
+        type: string
+    orderbyParam:
+      name: $orderby
+      description: 'The $orderby System Query option specifies the order in which entities are returned from the service.'
+      in: query
+      schema:
+        type: string        
+    selectParam:
+      name: $select
+      description: 'The $select system query option requests that the service return only the properties, open properties, related properties, actions and functions explicitly requested by the client. The service MUST return the specified content, and MAY choose to return additional information.'
+      in: query
+      schema:
+        type: string
+    skipParam:
+      name: $skip
+      description: 'The $skip System Query Option specifies that the result MUST NOT include the first n entities, where n is a non-negative integer value specified by the $skip query option.'
+      in: query
+      schema:
+        type: string
+    topParam:
+      name: $top
+      description: ''
+      in: query
+      schema:
+        type: string
   securitySchemes:
     OAuth2:
       type: oauth2
-      description: To use this API, you need to get OAuth client credentials (client
-        ID, secret, and geolocation) from SAP Concur, and be authorized to use the
-        relevant scope. Refer to the <a href="https://developer.concur.com/api-reference/authentication/getting-started.html">full
-        authentication information</a> for more information.
+      description: See https://api.sharefile.com/rest/oauth2.aspx
       flows:
         clientCredentials:
-          tokenUrl: https://{companyId}.sharefile.com/oauth/token 
+          tokenUrl: /oauth/token
+          scopes: {}
+        password:
+          tokenUrl: /oauth/token
           scopes: {}
