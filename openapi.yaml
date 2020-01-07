@@ -393,17 +393,13 @@ paths:
           type: string
     post:
       summary: 'Upload a file'
-      operationId: uploadFile
+      operationId: getChunkUri
       parameters:
         - name: method
           in: query
           schema:
             type: string
             enum: [standard, streamed, threaded]
-        - name: raw
-          in: query
-          schema:
-            type: boolean
         - name: fileName
           in: query
           schema:
@@ -416,22 +412,34 @@ paths:
           in: query
           schema:
             type: string
+        - name: tool
+          in: query
+          schema:
+            type: string
         - name: details
           in: query
           schema:
             type: string
+            nullable: true
+        - name: raw
+          in: query
+          schema:
+            type: boolean
         - name: batchId
           in: query
           schema:
             type: string
+            nullable: true
         - name: batchLast
           in: query
           schema:
             type: boolean          
+            nullable: true
         - name: canResume
           in: query
           schema:
             type: boolean   
+            nullable: true
         - name: startOver
           in: query
           schema:
@@ -439,7 +447,55 @@ paths:
         - name: overwrite
           in: query
           schema:
-            type: boolean   
+            type: boolean
+        - name: unzip
+          in: query
+          schema:
+            type: boolean
+        - name: baseFileId
+          in: query
+          schema:
+            type: string
+            nullable: true
+        - name: clientCreatedDateUTC
+          in: query
+          schema:
+            type: integer
+        - name: clientModifiedDateUTC
+          in: query
+          schema:
+            type: integer
+        - name: expirationDays
+          in: query
+          schema:
+            type: integer
+            nullable: true
+        - name: isSend
+          in: query
+          schema:
+            type: boolean
+        - name: notify
+          in: query
+          schema:
+            type: boolean
+        - name: opid
+          in: query
+          schema:
+            type: string
+            nullable: true
+        - name: responseFormat
+          in: query
+          schema:
+            type: string
+        - name: sendGuid
+          in: query
+          schema:
+            type: string
+            nullable: true
+        - name: threadCount
+          in: query
+          schema:
+            type: integer
       responses:
         200:
           description: Success
@@ -447,6 +503,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UploadSpecification'
+        400:
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Message:
+                    type: string
   /Users:
     get:
       summary: Get Users
